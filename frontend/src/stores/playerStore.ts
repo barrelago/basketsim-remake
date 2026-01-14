@@ -7,7 +7,7 @@ interface PlayerState {
   selectedPlayer: Player | null
   isLoading: boolean
   error: string | null
-  
+
   setAvailablePlayers: (players: Player[]) => void
   setRoster: (roster: TeamRoster[]) => void
   setSelectedPlayer: (player: Player | null) => void
@@ -29,16 +29,23 @@ export const usePlayerStore = create<PlayerState>((set) => ({
   setSelectedPlayer: (player) => set({ selectedPlayer: player }),
   setLoading: (loading) => set({ isLoading: loading }),
   setError: (error) => set({ error }),
-  
+
   removeFromRoster: (playerId) =>
     set((state) => ({
       roster: state.roster.filter((r) => r.playerId !== playerId),
-      availablePlayers: [...state.availablePlayers, ...state.roster.filter((r) => r.playerId === playerId).map((r) => r.player)],
+      availablePlayers: [
+        ...state.availablePlayers,
+        ...state.roster
+          .filter((r) => r.playerId === playerId)
+          .map((r) => r.player),
+      ],
     })),
 
   addToRoster: (newRoster) =>
     set((state) => ({
       roster: [...state.roster, newRoster],
-      availablePlayers: state.availablePlayers.filter((p) => p.id !== newRoster.playerId),
+      availablePlayers: state.availablePlayers.filter(
+        (p) => p.id !== newRoster.playerId
+      ),
     })),
 }))
