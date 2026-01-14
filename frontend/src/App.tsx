@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom'
 import { useAuthStore } from './stores/authStore'
 import { AuthPage } from './pages/AuthPage'
+import { TeamPage } from './pages/TeamPage'
 import { PlayersPage } from './pages/PlayersPage'
 import './App.css'
 
@@ -28,6 +29,12 @@ function Navigation() {
               className="text-blue-200 hover:text-white transition"
             >
               Dashboard
+            </button>
+            <button
+              onClick={() => navigate('/team')}
+              className="text-blue-200 hover:text-white transition"
+            >
+              Team
             </button>
             <button
               onClick={() => navigate('/players')}
@@ -73,7 +80,18 @@ function Dashboard() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {/* Browse Players Card */}
+          <div className="bg-white rounded-lg shadow-lg p-8 hover:shadow-xl transition">
+            <div className="text-5xl mb-4">🏆</div>
+            <h3 className="text-2xl font-bold text-blue-900 mb-2">Manage Team</h3>
+            <p className="text-gray-600 mb-4">Create and manage your basketball team.</p>
+            <button
+              onClick={() => navigate('/team')}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition"
+            >
+              Go to Team
+            </button>
+          </div>
+
           <div className="bg-white rounded-lg shadow-lg p-8 hover:shadow-xl transition">
             <div className="text-5xl mb-4">🎯</div>
             <h3 className="text-2xl font-bold text-blue-900 mb-2">Browse Players</h3>
@@ -86,27 +104,6 @@ function Dashboard() {
             </button>
           </div>
 
-          {/* Create Team Card */}
-          <div className="bg-white rounded-lg shadow-lg p-8 hover:shadow-xl transition">
-            <div className="text-5xl mb-4">🏆</div>
-            <h3 className="text-2xl font-bold text-blue-900 mb-2">Create Team</h3>
-            <p className="text-gray-600 mb-4">Set up your basketball team with a unique name.</p>
-            <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition">
-              Create Team (Coming Soon)
-            </button>
-          </div>
-
-          {/* Manage Finances Card */}
-          <div className="bg-white rounded-lg shadow-lg p-8 hover:shadow-xl transition">
-            <div className="text-5xl mb-4">💰</div>
-            <h3 className="text-2xl font-bold text-blue-900 mb-2">Manage Finances</h3>
-            <p className="text-gray-600 mb-4">Monitor your budget and player contracts.</p>
-            <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition">
-              View Budget (Coming Soon)
-            </button>
-          </div>
-
-          {/* Play Matches Card */}
           <div className="bg-white rounded-lg shadow-lg p-8 hover:shadow-xl transition">
             <div className="text-5xl mb-4">⚡</div>
             <h3 className="text-2xl font-bold text-blue-900 mb-2">Play Matches</h3>
@@ -116,7 +113,15 @@ function Dashboard() {
             </button>
           </div>
 
-          {/* League Standings Card */}
+          <div className="bg-white rounded-lg shadow-lg p-8 hover:shadow-xl transition">
+            <div className="text-5xl mb-4">💰</div>
+            <h3 className="text-2xl font-bold text-blue-900 mb-2">Manage Finances</h3>
+            <p className="text-gray-600 mb-4">Monitor your budget and player contracts.</p>
+            <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition">
+              View Budget (Coming Soon)
+            </button>
+          </div>
+
           <div className="bg-white rounded-lg shadow-lg p-8 hover:shadow-xl transition">
             <div className="text-5xl mb-4">📊</div>
             <h3 className="text-2xl font-bold text-blue-900 mb-2">League Standings</h3>
@@ -126,7 +131,6 @@ function Dashboard() {
             </button>
           </div>
 
-          {/* Your Profile Card */}
           <div className="bg-white rounded-lg shadow-lg p-8 hover:shadow-xl transition">
             <div className="text-5xl mb-4">👤</div>
             <h3 className="text-2xl font-bold text-blue-900 mb-2">Your Profile</h3>
@@ -179,6 +183,7 @@ function AppContent() {
     <Routes>
       <Route path="/login" element={<AuthPage onSuccess={handleLoginSuccess} />} />
       <Route path="/" element={user ? <Dashboard /> : <AuthPage onSuccess={handleLoginSuccess} />} />
+      <Route path="/team" element={user ? <TeamPage /> : <AuthPage onSuccess={handleLoginSuccess} />} />
       <Route path="/players" element={user ? <PlayersPage /> : <AuthPage onSuccess={handleLoginSuccess} />} />
     </Routes>
   )

@@ -3,6 +3,7 @@ import cors from 'cors'
 import dotenv from 'dotenv'
 import authRouter from './routes/auth.js'
 import playerRouter from './routes/players.js'
+import teamRouter from './routes/teams.js'
 
 dotenv.config()
 
@@ -24,6 +25,7 @@ app.get('/api/health', (req: Request, res: Response) => {
 })
 
 app.use('/api/auth', authRouter)
+app.use('/api/teams', teamRouter)
 app.use('/api/players', playerRouter)
 
 app.get('/', (req: Request, res: Response) => {
