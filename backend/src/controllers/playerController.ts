@@ -1,16 +1,14 @@
 import { Request, Response } from 'express'
-import {
-  getAllPlayers,
-  getPlayerById,
-  draftPlayer,
-  releasePlayer,
-  getTeamRoster,
-  searchPlayers,
-} from '../services/playerService.js'
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient()
 
 export async function getAvailablePlayers(req: Request, res: Response): Promise<void> {
   try {
-    const players = await getAllPlayers('available')
+    const players = await prisma.player.findMany({
+      where: { status: 'available' },
+      orderBy: { overall: 'desc' },
+    })
     res.json(players)
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch players' })
@@ -20,7 +18,9 @@ export async function getAvailablePlayers(req: Request, res: Response): Promise<
 export async function getPlayer(req: Request, res: Response): Promise<void> {
   try {
     const { id } = req.params
-    const player = await getPlayerById(parseInt(id))
+    const player = await prisma.player.findUnique({
+      where: { id: parseInt(id) },
+    })
     if (!player) {
       res.status(404).json({ error: 'Player not found' })
       return
@@ -41,26 +41,69 @@ export async function draftPlayerHandler(req: Request, res: Response): Promise<v
     const { playerId, position, number } = req.body
 
     if (!playerId || !position || !number) {
-      res.status(400).json({ error: 'Missing required fields' })
+      res.status(400).json({ error: 'Missing required fields: playerId, position, number' })
       return
     }
 
     // Get user's team
-    const { PrismaClient } = await import('@prisma/client')
-    const prisma = new PrismaClient()
-    
     const team = await prisma.team.findUnique({
       where: { userId: req.user.id },
     })
 
     if (!team) {
-      res.status(404).json({ error: 'Team not found' })
+      res.status(404).json({ error: 'Team not found. Please create a team first.' })
       return
     }
 
-    const roster = await draftPlayer(team.id, playerId, position, number)
-    res.json(roster)
+    // Get player
+    const player = await prisma.player.findUnique({
+      where: { id: playerId },
+    })
+
+    if (!player) {
+      res.status(404).json({ error: 'Player not found' })
+      return
+    }
+
+    if (player.status !== 'available') {
+      res.status(400).json({ error: 'Player is not available for draft' })
+      return
+    }
+
+    // Check budget
+    if (team.budget < player.salary) {
+      res.status(400).json({ error: `Insufficient budget. Need $${player.salary}K, have $${team.budget}K` })
+      return
+    }
+
+    // Draft the player
+    const roster = await prisma.teamRoster.create({
+      data: {
+        teamId: team.id,
+        playerId,
+        position,
+        number,
+      },
+      include: {
+        player: true,
+      },
+    })
+
+    // Update player status
+    await prisma.player.update({
+      where: { id: playerId },
+      data: { status: 'drafted' },
+    })
+
+    // Deduct from budget
+    await prisma.team.update({
+      where: { id: team.id },
+      data: { budget: team.budget - player.salary },
+    })
+
+    res.status(201).json(roster)
   } catch (error) {
+    console.error('Draft error:', error)
     res.status(400).json({ error: error instanceof Error ? error.message : 'Draft failed' })
   }
 }
@@ -79,9 +122,6 @@ export async function releasePlayerHandler(req: Request, res: Response): Promise
       return
     }
 
-    const { PrismaClient } = await import('@prisma/client')
-    const prisma = new PrismaClient()
-
     const team = await prisma.team.findUnique({
       where: { userId: req.user.id },
     })
@@ -91,8 +131,34 @@ export async function releasePlayerHandler(req: Request, res: Response): Promise
       return
     }
 
-    const result = await releasePlayer(team.id, playerId)
-    res.json(result)
+    // Get player for salary refund
+    const player = await prisma.player.findUnique({
+      where: { id: playerId },
+    })
+
+    // Remove from roster
+    await prisma.teamRoster.deleteMany({
+      where: {
+        teamId: team.id,
+        playerId,
+      },
+    })
+
+    // Update player status
+    await prisma.player.update({
+      where: { id: playerId },
+      data: { status: 'available' },
+    })
+
+    // Refund salary
+    if (player) {
+      await prisma.team.update({
+        where: { id: team.id },
+        data: { budget: team.budget + player.salary },
+      })
+    }
+
+    res.json({ success: true })
   } catch (error) {
     res.status(400).json({ error: error instanceof Error ? error.message : 'Release failed' })
   }
@@ -105,9 +171,6 @@ export async function getRoster(req: Request, res: Response): Promise<void> {
       return
     }
 
-    const { PrismaClient } = await import('@prisma/client')
-    const prisma = new PrismaClient()
-
     const team = await prisma.team.findUnique({
       where: { userId: req.user.id },
     })
@@ -117,7 +180,14 @@ export async function getRoster(req: Request, res: Response): Promise<void> {
       return
     }
 
-    const roster = await getTeamRoster(team.id)
+    const roster = await prisma.teamRoster.findMany({
+      where: { teamId: team.id },
+      include: {
+        player: true,
+      },
+      orderBy: { number: 'asc' },
+    })
+
     res.json(roster)
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch roster' })
@@ -133,7 +203,22 @@ export async function searchPlayersHandler(req: Request, res: Response): Promise
       return
     }
 
-    const players = await searchPlayers(q, position as string | undefined)
+    const players = await prisma.player.findMany({
+      where: {
+        AND: [
+          {
+            OR: [
+              { firstName: { contains: q, mode: 'insensitive' } },
+              { lastName: { contains: q, mode: 'insensitive' } },
+            ],
+          },
+          position ? { position: position as string } : {},
+        ],
+      },
+      orderBy: { overall: 'desc' },
+      take: 20,
+    })
+
     res.json(players)
   } catch (error) {
     res.status(500).json({ error: 'Search failed' })

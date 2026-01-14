@@ -151,11 +151,17 @@ function AppContent() {
   const user = useAuthStore((state) => state.user)
   const loadFromStorage = useAuthStore((state) => state.loadFromStorage)
   const [mounted, setMounted] = useState(false)
+  const [authCheck, setAuthCheck] = useState(0)
 
   useEffect(() => {
     loadFromStorage()
     setMounted(true)
-  }, [loadFromStorage])
+  }, [loadFromStorage, authCheck])
+
+  const handleLoginSuccess = () => {
+    loadFromStorage()
+    setAuthCheck(prev => prev + 1)
+  }
 
   if (!mounted) {
     return (
@@ -171,9 +177,9 @@ function AppContent() {
 
   return (
     <Routes>
-      <Route path="/login" element={<AuthPage onSuccess={() => {}} />} />
-      <Route path="/" element={user ? <Dashboard /> : <AuthPage onSuccess={() => {}} />} />
-      <Route path="/players" element={user ? <PlayersPage /> : <AuthPage onSuccess={() => {}} />} />
+      <Route path="/login" element={<AuthPage onSuccess={handleLoginSuccess} />} />
+      <Route path="/" element={user ? <Dashboard /> : <AuthPage onSuccess={handleLoginSuccess} />} />
+      <Route path="/players" element={user ? <PlayersPage /> : <AuthPage onSuccess={handleLoginSuccess} />} />
     </Routes>
   )
 }

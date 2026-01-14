@@ -26,76 +26,41 @@ export interface TeamRoster {
   player: Player
 }
 
+const getAvailable = (token: string) => {
+  const url = `${API_URL}/api/players`
+  const opts = { headers: { Authorization: `Bearer ${token}` } }
+  return fetch(url, opts).then(r => r.json())
+}
+
+const getRoster = (token: string) => {
+  const url = `${API_URL}/api/players/me/roster`
+  const opts = { headers: { Authorization: `Bearer ${token}` } }
+  return fetch(url, opts).then(r => r.json())
+}
+
+const draftPlayer = (playerId: number, position: string, number: number, token: string) => {
+  const url = `${API_URL}/api/players/draft`
+  const opts = { 
+    method: 'POST', 
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, 
+    body: JSON.stringify({ playerId, position, number }) 
+  }
+  return fetch(url, opts).then(r => r.json())
+}
+
+const releasePlayer = (playerId: number, token: string) => {
+  const url = `${API_URL}/api/players/release`
+  const opts = { 
+    method: 'POST', 
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, 
+    body: JSON.stringify({ playerId }) 
+  }
+  return fetch(url, opts).then(r => r.json())
+}
+
 export const playerApi = {
-  getAvailable: async (token: string): Promise<Player[]> => {
-    const response = await fetch(`${API_URL}/api/players`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    if (!response.ok) throw new Error('Failed to fetch players')
-    return response.json()
-  },
-
-  getPlayer: async (id: number, token: string): Promise<Player> => {
-    const response = await fetch(`${API_URL}/api/players/${id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    if (!response.ok) throw new Error('Failed to fetch player')
-    return response.json()
-  },
-
-  search: async (query: string, position?: string, token?: string): Promise<Player[]> => {
-    const params = new URLSearchParams({ q: query })
-    if (position) params.append('position', position)
-
-    const response = await fetch(`${API_URL}/api/players/search?${params}`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    })
-    if (!response.ok) throw new Error('Search failed')
-    return response.json()
-  },
-
-  draftPlayer: async (
-    playerId: number,
-    position: string,
-    number: number,
-    token: string
-  ): Promise<TeamRoster> => {
-    const response = await fetch(`${API_URL}/api/players/draft`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ playerId, position, number }),
-    })
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.error || 'Draft failed')
-    }
-    return response.json()
-  },
-
-  releasePlayer: async (playerId: number, token: string): Promise<any> => {
-    const response = await fetch(`${API_URL}/api/players/release`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ playerId }),
-    })
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.error || 'Release failed')
-    }
-    return response.json()
-  },
-
-  getRoster: async (token: string): Promise<TeamRoster[]> => {
-    const response = await fetch(`${API_URL}/api/players/me/roster`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    if (!response.ok) throw new Error('Failed to fetch roster')
-    return response.json()
-  },
+  getAvailable,
+  getRoster,
+  draftPlayer,
+  releasePlayer,
 }

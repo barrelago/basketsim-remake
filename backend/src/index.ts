@@ -9,14 +9,12 @@ dotenv.config()
 const app: Express = express()
 const port = process.env.PORT || 3000
 
-// Middleware
 app.use(cors({ 
   origin: process.env.FRONTEND_URL || 'http://localhost:5173', 
   credentials: true 
 }))
 app.use(express.json())
 
-// Routes
 app.get('/api/health', (req: Request, res: Response) => {
   res.json({
     status: 'ok',
@@ -32,15 +30,9 @@ app.get('/', (req: Request, res: Response) => {
   res.json({ 
     name: 'BasketSim API', 
     version: '0.1.0',
-    endpoints: {
-      health: '/api/health',
-      auth: '/api/auth',
-      players: '/api/players',
-    }
   })
 })
 
-// Error handling
 app.use((err: any, req: Request, res: Response) => {
   console.error(err)
   res.status(500).json({ error: 'Internal server error' })

@@ -16,20 +16,23 @@ export function Login({ onSuccess, onSwitchToRegister }: LoginProps) {
   const setAuth = useAuthStore((state) => state.setAuth)
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
+  e.preventDefault()
+  setError('')
+  setLoading(true)
 
-    try {
-      const result = await authApi.login(email, password)
-      setAuth(result.user, result.token)
-      onSuccess?.()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed')
-    } finally {
-      setLoading(false)
-    }
+  try {
+    const result = await authApi.login(email, password)
+    setAuth(result.user, result.token)
+    // Force a small delay then reload to ensure state is saved
+    setTimeout(() => {
+      window.location.href = '/'
+    }, 100)
+  } catch (err) {
+    setError(err instanceof Error ? err.message : 'Login failed')
+  } finally {
+    setLoading(false)
   }
+}
 
   return (
     <div className="w-full max-w-md mx-auto">
