@@ -1,8 +1,8 @@
-import jwt from 'jsonwebtoken'
+import jwt, { type Secret, type SignOptions } from 'jsonwebtoken'
 import { JwtPayload } from '../types/index.js'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
-const JWT_EXPIRATION = process.env.JWT_EXPIRATION || '7d'
+const JWT_SECRET: Secret = process.env.JWT_SECRET || 'your-secret-key'
+const JWT_EXPIRATION = (process.env.JWT_EXPIRATION || '7d') as SignOptions['expiresIn']
 
 export function generateToken(payload: JwtPayload): string {
   return jwt.sign(payload, JWT_SECRET, {

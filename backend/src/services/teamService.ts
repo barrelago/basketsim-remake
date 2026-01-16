@@ -1,6 +1,37 @@
 import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
+const MIN_LEAGUE_SIZE = 10
+
+async function ensureLeagueSize(country: string) {
+  const teams = await prisma.team.findMany({
+    where: { country },
+    select: { id: true, name: true },
+  })
+  let count = teams.length
+  if (count >= MIN_LEAGUE_SIZE) return
+
+  const nameSet = new Set(teams.map((t) => t.name))
+  let botIndex = 1
+
+  while (count < MIN_LEAGUE_SIZE) {
+    let name = `${country} Bots ${botIndex}`
+    while (nameSet.has(name)) {
+      botIndex += 1
+      name = `${country} Bots ${botIndex}`
+    }
+    await prisma.team.create({
+      data: {
+        name,
+        country,
+        userId: null,
+      },
+    })
+    nameSet.add(name)
+    botIndex += 1
+    count += 1
+  }
+}
 
 export async function createTeam(userId: number, data: { name: string; country: string }) {
   // Check if user already has a team
@@ -29,13 +60,17 @@ export async function createTeam(userId: number, data: { name: string; country: 
     throw new Error('Country is required')
   }
 
-  return prisma.team.create({
+  const created = await prisma.team.create({
     data: {
       name: data.name,
       country: data.country,
       userId,
     },
   })
+
+  await ensureLeagueSize(data.country)
+
+  return created
 }
 
 export async function getUserTeam(userId: number) {
@@ -53,6 +88,15 @@ export async function getUserTeam(userId: number) {
 }
 
 export async function updateTeam(teamId: number, data: { name?: string; country?: string }) {
+  const existingTeam = await prisma.team.findUnique({
+    where: { id: teamId },
+    select: { country: true },
+  })
+
+  if (!existingTeam) {
+    throw new Error('Team not found')
+  }
+
   if (data.name) {
     const nameExists = await prisma.team.findFirst({
       where: {
@@ -65,24 +109,50 @@ export async function updateTeam(teamId: number, data: { name?: string; country?
     }
   }
 
-  return prisma.team.update({
+  const updated = await prisma.team.update({
     where: { id: teamId },
     data,
   })
+
+  if (data.country && data.country !== existingTeam.country) {
+    await ensureLeagueSize(existingTeam.country)
+    await ensureLeagueSize(data.country)
+  }
+
+  return updated
 }
 
 export async function deleteTeam(teamId: number) {
+  const existingTeam = await prisma.team.findUnique({
+    where: { id: teamId },
+    select: { country: true },
+  })
+
+  if (!existingTeam) {
+    throw new Error('Team not found')
+  }
+
   // Delete roster entries first
   await prisma.teamRoster.deleteMany({
     where: { teamId },
   })
 
-  return prisma.team.delete({
+  const deleted = await prisma.team.delete({
     where: { id: teamId },
   })
+
+  await ensureLeagueSize(existingTeam.country)
+
+  return deleted
 }
 
 export async function getAllTeams() {
+  const countries = await prisma.team.findMany({
+    select: { country: true },
+    distinct: ['country'],
+  })
+  await Promise.all(countries.map((c) => ensureLeagueSize(c.country)))
+
   return prisma.team.findMany({
     include: {
       roster: true,

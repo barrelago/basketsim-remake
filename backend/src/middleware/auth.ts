@@ -36,3 +36,24 @@ export function authMiddleware(
     res.status(401).json({ error: 'Authentication failed' })
   }
 }
+
+export function requireRole(roles: string | string[]) {
+  const allowed = Array.isArray(roles) ? roles : [roles]
+  return (req: Request, res: Response, next: NextFunction) => {
+    try {
+      if (!req.user) {
+        res.status(401).json({ error: 'Not authenticated' })
+        return
+      }
+
+      if (!allowed.includes(req.user.role)) {
+        res.status(403).json({ error: 'Insufficient permissions' })
+        return
+      }
+
+      next()
+    } catch (error) {
+      res.status(403).json({ error: 'Access denied' })
+    }
+  }
+}

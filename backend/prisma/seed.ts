@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client'
+import { hashPassword } from '../src/utils/password.js'
 
 const prisma = new PrismaClient()
 
@@ -138,6 +139,71 @@ async function main() {
   }
 
   console.log('✅ Seeded 8 players')
+
+  // Create admin and a second user to own teams
+  const adminPassword = await hashPassword('adminpass')
+  const ownerPassword = await hashPassword('ownerpass')
+
+  const admin = await prisma.user.upsert({
+    where: { email: 'admin@basketsim.test' },
+    update: {
+      name: 'Admin',
+      password: adminPassword,
+      role: 'admin',
+    },
+    create: {
+      email: 'admin@basketsim.test',
+      name: 'Admin',
+      password: adminPassword,
+      role: 'admin',
+    },
+  })
+
+  const owner = await prisma.user.upsert({
+    where: { email: 'owner1@basketsim.test' },
+    update: {
+      name: 'Owner One',
+      password: ownerPassword,
+      role: 'player',
+    },
+    create: {
+      email: 'owner1@basketsim.test',
+      name: 'Owner One',
+      password: ownerPassword,
+      role: 'player',
+    },
+  })
+
+  // Create two teams owned by the users
+  const teamA = await prisma.team.upsert({
+    where: { name: 'Team Alpha' },
+    update: { country: 'USA', userId: admin.id },
+    create: { name: 'Team Alpha', country: 'USA', userId: admin.id },
+  })
+
+  const teamB = await prisma.team.upsert({
+    where: { name: 'Team Beta' },
+    update: { country: 'USA', userId: owner.id },
+    create: { name: 'Team Beta', country: 'USA', userId: owner.id },
+  })
+
+  // Assign first half of players to Team Alpha, rest to Team Beta
+  const allPlayers = await prisma.player.findMany({ orderBy: { id: 'asc' } })
+  const half = Math.ceil(allPlayers.length / 2)
+
+  for (let i = 0; i < allPlayers.length; i++) {
+    const p = allPlayers[i]
+    await prisma.teamRoster.create({
+      data: {
+        teamId: i < half ? teamA.id : teamB.id,
+        playerId: p.id,
+        position: p.position,
+        number: 7 + i,
+      },
+    })
+  }
+
+  console.log('✅ Created admin, owner, two teams, and assigned players to rosters')
 }
 
 main()

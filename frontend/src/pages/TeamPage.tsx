@@ -78,11 +78,55 @@ export function TeamPage() {
 
       <main className="container mx-auto py-12 px-4">
         {myTeam ? (
-          <div className="bg-white rounded-lg shadow-lg p-8">
-            <h2 className="text-3xl font-bold text-blue-900">{myTeam.name}</h2>
-            <p className="text-gray-600">{myTeam.country}</p>
-            <p className="text-2xl font-bold mt-4">Budget: ${(myTeam.budget / 1000).toFixed(0)}K</p>
-            <p className="text-lg text-gray-700 mt-2">Record: {myTeam.wins}-{myTeam.losses}</p>
+          <div className="space-y-8">
+            <div className="bg-white rounded-lg shadow-lg p-8">
+              <h2 className="text-3xl font-bold text-blue-900">{myTeam.name}</h2>
+              <p className="text-gray-600">{myTeam.country}</p>
+              <p className="text-2xl font-bold mt-4">Budget: ${(myTeam.budget / 1000).toFixed(0)}K</p>
+              <p className="text-lg text-gray-700 mt-2">Record: {myTeam.wins}-{myTeam.losses}</p>
+            </div>
+
+            <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+              <div className="px-6 py-4 border-b">
+                <h3 className="text-xl font-semibold text-blue-900">Team Roster</h3>
+              </div>
+              {Array.isArray(myTeam.roster) && myTeam.roster.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead className="bg-gray-50 text-gray-600">
+                      <tr>
+                        <th className="text-left px-6 py-3">#</th>
+                        <th className="text-left px-6 py-3">Player</th>
+                        <th className="text-left px-6 py-3">Pos</th>
+                        <th className="text-left px-6 py-3">Age</th>
+                        <th className="text-left px-6 py-3">Overall</th>
+                        <th className="text-left px-6 py-3">Salary</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {myTeam.roster.map((slot: any) => {
+                        const player = slot.player
+                        const name = player ? `${player.firstName} ${player.lastName}` : 'Unknown'
+                        return (
+                          <tr key={slot.id} className="border-t">
+                            <td className="px-6 py-3">{slot.number}</td>
+                            <td className="px-6 py-3 font-medium text-blue-900">{name}</td>
+                            <td className="px-6 py-3">{slot.position}</td>
+                            <td className="px-6 py-3">{player?.age ?? '-'}</td>
+                            <td className="px-6 py-3">{player?.overall ?? '-'}</td>
+                            <td className="px-6 py-3">
+                              {player?.salary ? `$${Math.round(player.salary / 1000)}K` : '-'}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="p-6 text-gray-600">No players on the roster yet.</div>
+              )}
+            </div>
           </div>
         ) : (
           <div className="bg-white rounded-lg shadow-lg p-12 text-center">

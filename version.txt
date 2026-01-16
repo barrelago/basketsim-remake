@@ -1,0 +1,2 @@
+version: 0.1.0
+# Took over the project from GitHub Copilot.

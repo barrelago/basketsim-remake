@@ -1,4 +1,4 @@
-import express from 'express'
+import express, { Router } from 'express'
 import {
   createTeamHandler,
   getMyTeamHandler,
@@ -8,7 +8,7 @@ import {
 } from '../controllers/teamController.js'
 import { authMiddleware } from '../middleware/auth.js'
 
-const router = express.Router()
+const router: Router = express.Router()
 
 router.get('/', getAllTeamsHandler)
 router.post('/', authMiddleware, createTeamHandler)

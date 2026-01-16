@@ -1,4 +1,4 @@
-import express from 'express'
+import express, { Router } from 'express'
 import {
   getAvailablePlayers,
   getPlayer,
@@ -9,7 +9,7 @@ import {
 } from '../controllers/playerController.js'
 import { authMiddleware } from '../middleware/auth.js'
 
-const router = express.Router()
+const router: Router = express.Router()
 
 router.post('/draft', authMiddleware, draftPlayerHandler)
 router.post('/release', authMiddleware, releasePlayerHandler)

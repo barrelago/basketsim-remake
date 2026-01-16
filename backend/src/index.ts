@@ -1,9 +1,10 @@
-import express, { Express, Request, Response } from 'express'
+import express, { Express, Request, Response, NextFunction } from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import authRouter from './routes/auth.js'
 import playerRouter from './routes/players.js'
 import teamRouter from './routes/teams.js'
+import matchRouter from './routes/matches.js'
 
 dotenv.config()
 
@@ -26,6 +27,7 @@ app.get('/api/health', (req: Request, res: Response) => {
 
 app.use('/api/auth', authRouter)
 app.use('/api/teams', teamRouter)
+app.use('/api/matches', matchRouter)
 app.use('/api/players', playerRouter)
 
 app.get('/', (req: Request, res: Response) => {
@@ -35,7 +37,7 @@ app.get('/', (req: Request, res: Response) => {
   })
 })
 
-app.use((err: any, req: Request, res: Response) => {
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   console.error(err)
   res.status(500).json({ error: 'Internal server error' })
 })
